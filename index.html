@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#16301F">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Mess Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Slab:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cover:#16301F;
+    --cover-deep:#0F2216;
+    --paper:#EFE9D8;
+    --paper-line:#CFC6A8;
+    --ink:#1F2A24;
+    --ink-soft:#5B6358;
+    --stamp-red:#A23B32;
+    --stamp-gold:#93701F;
+    --stamp-green:#2F6B4F;
+    --focus:#3B6E52;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--cover);
+    background-image:
+      radial-gradient(ellipse at top, rgba(255,255,255,0.05), transparent 60%);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.01ms !important; transition-duration:0.01ms !important;}
+  }
+
+  .shell{
+    max-width:460px;
+    margin:0 auto;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* ---- Cover header ---- */
+  header.cover{
+    padding:28px 22px 20px;
+    color:#EFE9D8;
+  }
+  .cover-top{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .brand-mark{
+    width:34px;height:34px;
+    border-radius:50%;
+    border:1.5px solid rgba(239,233,216,0.55);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'IBM Plex Slab', serif;
+    font-weight:600;
+    font-size:15px;
+  }
+  .brand-text h1{
+    margin:0;
+    font-family:'IBM Plex Slab', serif;
+    font-weight:600;
+    font-size:19px;
+    letter-spacing:0.2px;
+  }
+  .brand-text p{
+    margin:2px 0 0;
+    font-size:12.5px;
+    color:rgba(239,233,216,0.65);
+  }
+  .settings-btn{
+    background:none;
+    border:1.5px solid rgba(239,233,216,0.4);
+    color:#EFE9D8;
+    width:36px;height:36px;
+    border-radius:50%;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    font-size:15px;
+    transition:background 0.15s ease;
+  }
+  .settings-btn:hover{ background:rgba(239,233,216,0.1); }
+  .settings-btn:focus-visible{ outline:2px solid #EFE9D8; outline-offset:2px; }
+
+  /* ---- Passbook page ---- */
+  main.page{
+    background:var(--paper);
+    border-radius:18px 18px 0 0;
+    flex:1;
+    padding:22px 20px 90px;
+    box-shadow:0 -8px 24px rgba(0,0,0,0.25);
+    position:relative;
+  }
+  main.page::before{
+    content:"";
+    position:absolute;
+    top:0;left:28px;right:28px;
+    height:1px;
+    background:rgba(0,0,0,0.06);
+  }
+
+  section{ margin-bottom:28px; }
+  h2.section-title{
+    font-family:'IBM Plex Slab', serif;
+    font-size:14.5px;
+    font-weight:600;
+    margin:0 0 12px;
+    color:var(--ink);
+  }
+
+  /* ---- Stamp summary ---- */
+  .summary{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    padding:6px 2px 18px;
+    border-bottom:1px dashed var(--paper-line);
+  }
+  .stamp{
+    flex-shrink:0;
+    width:104px;height:104px;
+    border-radius:50%;
+    border:2.5px solid currentColor;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    transform:rotate(-4deg);
+  }
+  .stamp::before{
+    content:"";
+    position:absolute;
+    inset:6px;
+    border:1px solid currentColor;
+    border-radius:50%;
+    opacity:0.5;
+  }
+  .stamp .amt{
+    font-family:'IBM Plex Slab', serif;
+    font-weight:700;
+    font-size:21px;
+    line-height:1.1;
+  }
+  .stamp .lbl{
+    font-size:9.5px;
+    margin-top:2px;
+    text-align:center;
+    line-height:1.2;
+    padding:0 8px;
+  }
+  .summary-detail{ flex:1; }
+  .summary-row{
+    display:flex;
+    justify-content:space-between;
+    font-size:13px;
+    color:var(--ink-soft);
+    padding:3px 0;
+  }
+  .summary-row strong{
+    color:var(--ink);
+    font-family:'IBM Plex Slab', serif;
+    font-weight:600;
+  }
+
+  .meter{
+    margin-top:14px;
+    height:8px;
+    border-radius:5px;
+    background:rgba(0,0,0,0.08);
+    overflow:hidden;
+    position:relative;
+  }
+  .meter-fill{
+    height:100%;
+    border-radius:5px;
+    transition:width 0.4s ease;
+  }
+  .meter-pace{
+    position:absolute;
+    top:-3px;
+    width:2px;
+    height:14px;
+    background:var(--ink);
+    opacity:0.35;
+  }
+  .meter-caption{
+    display:flex;
+    justify-content:space-between;
+    font-size:11px;
+    color:var(--ink-soft);
+    margin-top:6px;
+  }
+
+  /* ---- Chart ---- */
+  .chart-wrap{
+    background:rgba(255,255,255,0.35);
+    border:1px solid var(--paper-line);
+    border-radius:10px;
+    padding:14px 12px 10px;
+  }
+  .chart-legend{
+    display:flex;
+    gap:16px;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    margin-top:6px;
+    padding-left:2px;
+  }
+  .chart-legend span{ display:flex; align-items:center; gap:5px; }
+  .dot{ width:8px;height:8px;border-radius:50%; display:inline-block; }
+
+  /* ---- Entry form ---- */
+  .entry-card{
+    background:rgba(255,255,255,0.4);
+    border:1px solid var(--paper-line);
+    border-radius:10px;
+    padding:16px;
+  }
+  .date-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:14px;
+  }
+  .date-row label{
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+  input[type="date"]{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:13px;
+    color:var(--ink);
+    background:transparent;
+    border:none;
+    border-bottom:1.5px solid var(--paper-line);
+    padding:4px 2px;
+  }
+  input[type="date"]:focus-visible{ outline:2px solid var(--focus); outline-offset:2px; }
+
+  .meal-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:10px 0;
+    border-top:1px dotted var(--paper-line);
+  }
+  .meal-row:first-of-type{ border-top:none; }
+  .meal-name{
+    display:flex;
+    flex-direction:column;
+  }
+  .meal-name span.title{
+    font-size:14px;
+    font-weight:500;
+  }
+  .meal-name span.hint{
+    font-size:11px;
+    color:var(--ink-soft);
+    margin-top:1px;
+  }
+  .amount-field{
+    display:flex;
+    align-items:center;
+    gap:2px;
+  }
+  .amount-field .rupee{ font-size:14px; color:var(--ink-soft); }
+  .amount-field input{
+    width:64px;
+    font-family:'IBM Plex Slab', serif;
+    font-weight:600;
+    font-size:16px;
+    text-align:right;
+    color:var(--ink);
+    background:transparent;
+    border:none;
+    border-bottom:1.5px solid var(--paper-line);
+    padding:4px 2px;
+  }
+  .amount-field input:focus-visible{ outline:2px solid var(--focus); outline-offset:2px; border-radius:2px;}
+  .amount-field input::placeholder{ color:#B7AF95; font-weight:400; }
+
+  .entry-total{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding-top:12px;
+    margin-top:4px;
+    border-top:1px solid var(--paper-line);
+    font-size:13px;
+    color:var(--ink-soft);
+  }
+  .entry-total strong{
+    font-family:'IBM Plex Slab', serif;
+    color:var(--ink);
+    font-size:15px;
+  }
+
+  button.save-btn{
+    width:100%;
+    margin-top:14px;
+    padding:12px;
+    border:none;
+    border-radius:8px;
+    background:var(--stamp-green);
+    color:#EFE9D8;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-weight:600;
+    font-size:14px;
+    cursor:pointer;
+    transition:background 0.15s ease, transform 0.1s ease;
+  }
+  button.save-btn:hover{ background:#275A42; }
+  button.save-btn:active{ transform:scale(0.99); }
+  button.save-btn:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; }
+  button.save-btn.is-update{ background:var(--stamp-gold); color:#2A2210; }
+  button.save-btn.is-update:hover{ background:#7C5E19; }
+
+  /* ---- Log list ---- */
+  .log-list{
+    border-top:1px solid var(--paper-line);
+  }
+  .log-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:12px 2px;
+    border-bottom:1px dotted var(--paper-line);
+    cursor:pointer;
+  }
+  .log-row:hover{ background:rgba(0,0,0,0.02); }
+  .log-date{
+    display:flex;
+    flex-direction:column;
+  }
+  .log-date .d{
+    font-family:'IBM Plex Slab', serif;
+    font-weight:600;
+    font-size:14px;
+  }
+  .log-date .b{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    margin-top:1px;
+  }
+  .log-amt{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .log-amt .total{
+    font-family:'IBM Plex Slab', serif;
+    font-weight:600;
+    font-size:15px;
+  }
+  .log-amt button.del{
+    background:none;
+    border:none;
+    color:var(--stamp-red);
+    font-size:16px;
+    line-height:1;
+    cursor:pointer;
+    padding:4px 6px;
+    opacity:0.55;
+  }
+  .log-amt button.del:hover{ opacity:1; }
+  .log-amt button.del:focus-visible{ outline:2px solid var(--stamp-red); outline-offset:2px; border-radius:4px; }
+
+  .empty-state{
+    padding:30px 10px;
+    text-align:center;
+    color:var(--ink-soft);
+    font-size:13.5px;
+    line-height:1.5;
+  }
+
+  /* ---- Settings drawer ---- */
+  .drawer-backdrop{
+    position:fixed; inset:0;
+    background:rgba(15,34,22,0.55);
+    display:none;
+    align-items:flex-end;
+    justify-content:center;
+    z-index:20;
+  }
+  .drawer-backdrop.open{ display:flex; }
+  .drawer{
+    background:var(--paper);
+    width:100%;
+    max-width:460px;
+    border-radius:16px 16px 0 0;
+    padding:22px 20px 28px;
+  }
+  .drawer h3{
+    font-family:'IBM Plex Slab', serif;
+    margin:0 0 16px;
+    font-size:16px;
+  }
+  .drawer label{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    display:block;
+    margin-bottom:6px;
+  }
+  .drawer .budget-input{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    border-bottom:1.5px solid var(--paper-line);
+    padding-bottom:6px;
+    margin-bottom:20px;
+  }
+  .drawer .budget-input span{ font-size:18px; color:var(--ink-soft); }
+  .drawer .budget-input input{
+    flex:1;
+    font-family:'IBM Plex Slab', serif;
+    font-weight:600;
+    font-size:20px;
+    border:none;
+    background:transparent;
+    color:var(--ink);
+  }
+  .drawer .budget-input input:focus-visible{ outline:none; }
+  .drawer-actions{ display:flex; gap:10px; }
+  .drawer-actions button{
+    flex:1;
+    padding:11px;
+    border-radius:8px;
+    font-size:13.5px;
+    font-weight:600;
+    font-family:'IBM Plex Sans', sans-serif;
+    cursor:pointer;
+  }
+  .drawer-actions .close-btn{
+    background:var(--stamp-green);
+    color:#EFE9D8;
+    border:none;
+  }
+  .drawer-actions .reset-btn{
+    background:none;
+    border:1.5px solid var(--stamp-red);
+    color:var(--stamp-red);
+  }
+  .drawer-note{
+    margin-top:18px;
+    padding-top:16px;
+    border-top:1px dashed var(--paper-line);
+    font-size:11.5px;
+    color:var(--ink-soft);
+    line-height:1.5;
+  }
+
+  .toast{
+    position:fixed;
+    bottom:18px;
+    left:50%;
+    transform:translateX(-50%) translateY(0);
+    background:var(--ink);
+    color:var(--paper);
+    padding:9px 16px;
+    border-radius:20px;
+    font-size:12.5px;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity 0.25s ease, transform 0.25s ease;
+    z-index:30;
+  }
+  .toast.show{
+    opacity:1;
+    transform:translateX(-50%) translateY(-6px);
+  }
+
+  .loading-note{
+    padding:40px 20px;
+    text-align:center;
+    color:var(--ink-soft);
+    font-size:13px;
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <header class="cover">
+    <div class="cover-top">
+      <div class="brand">
+        <div class="brand-mark">₹</div>
+        <div class="brand-text">
+          <h1>Mess Ledger</h1>
+          <p id="monthLabel">Loading…</p>
+        </div>
+      </div>
+      <button class="settings-btn" id="openSettings" aria-label="Open budget settings">⚙</button>
+    </div>
+  </header>
+
+  <main class="page" id="pageContent">
+    <div class="loading-note">Opening your ledger…</div>
+  </main>
+</div>
+
+<div class="drawer-backdrop" id="drawerBackdrop">
+  <div class="drawer">
+    <h3>Monthly budget</h3>
+    <label for="budgetInput">Amount for this month</label>
+    <div class="budget-input">
+      <span>₹</span>
+      <input type="number" id="budgetInput" inputmode="numeric" min="0">
+    </div>
+    <div class="drawer-actions">
+      <button class="reset-btn" id="resetBtn" type="button">Clear this month</button>
+      <button class="close-btn" id="saveBudgetBtn" type="button">Save</button>
+    </div>
+    <div class="drawer-note">
+      Your entries are saved on this device. On Android, open the hosted app in Chrome and use <strong>Install app</strong> or <strong>Add to Home screen</strong>.
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'mess-ledger-v1';
+  const DEFAULT_BUDGET = 4000;
+  const DEFAULT_LUNCH = 60;
+  const DEFAULT_DINNER = 60;
+
+  const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  let state = { budgetsByMonth: {}, entries: {} };
+  let loaded = false;
+
+  const pad = n => String(n).padStart(2,'0');
+  const toKey = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const monthKeyOf = dateKey => dateKey.slice(0,7);
+  const fmt = n => '₹' + Math.round(n).toLocaleString('en-IN');
+  const todayKey = () => toKey(new Date());
+
+  function daysInMonth(monthKey){
+    const [y,m] = monthKey.split('-').map(Number);
+    return new Date(y, m, 0).getDate();
+  }
+
+  function budgetFor(monthKey){
+    return state.budgetsByMonth[monthKey] ?? DEFAULT_BUDGET;
+  }
+
+  function entryTotal(e){
+    if(!e) return 0;
+    return (Number(e.breakfast)||0) + (Number(e.lunch)||0) + (Number(e.dinner)||0);
+  }
+
+  function monthEntries(monthKey){
+    return Object.keys(state.entries)
+      .filter(k => monthKeyOf(k) === monthKey)
+      .sort();
+  }
+
+  async function loadState(){
+    try{
+      const value = localStorage.getItem(STORAGE_KEY);
+      if(value){
+        const parsed = JSON.parse(value);
+        state = { budgetsByMonth: parsed.budgetsByMonth || {}, entries: parsed.entries || {} };
+      }
+    }catch(err){
+      // no saved state yet, or fetch failed — start fresh
+      console.log('No existing ledger found, starting fresh.', err);
+    }
+    loaded = true;
+  }
+
+  async function persist(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }catch(err){
+      console.error('Storage error:', err);
+      showToast('Could not save — try again');
+    }
+  }
+
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=> t.classList.remove('show'), 1800);
+  }
+
+  // ---------- Chart ----------
+  function buildChartSVG(monthKey, budget){
+    const total = daysInMonth(monthKey);
+    const keys = monthEntries(monthKey);
+    const todayNum = (monthKeyOf(todayKey()) === monthKey) ? Number(todayKey().slice(8,10)) : total;
+    const lastDay = keys.length ? Math.max(todayNum, Number(keys[keys.length-1].slice(8,10))) : todayNum;
+
+    // cumulative spend by day
+    let running = 0;
+    const cumByDay = new Array(total+1).fill(null);
+    cumByDay[0] = 0;
+    const spendByDate = {};
+    keys.forEach(k => spendByDate[Number(k.slice(8,10))] = entryTotal(state.entries[k]));
+    for(let d=1; d<=total; d++){
+      if(spendByDate[d] !== undefined) running += spendByDate[d];
+      if(d <= lastDay) cumByDay[d] = running;
+    }
+
+    const w = 300, h = 130, padL = 6, padR = 6, padT = 8, padB = 18;
+    const plotW = w - padL - padR, plotH = h - padT - padB;
+    const maxY = Math.max(budget, running) * 1.05 || 1;
+
+    const x = d => padL + (d/total)*plotW;
+    const y = v => padT + plotH - (v/maxY)*plotH;
+
+    // pace line: 0 -> budget across full month
+    const paceLine = `M ${x(0)} ${y(0)} L ${x(total)} ${y(budget)}`;
+
+    // actual line: only up to lastDay, skipping nulls smoothly
+    let actualPath = '';
+    let started = false;
+    for(let d=0; d<=total; d++){
+      if(cumByDay[d] === null) continue;
+      const cmd = started ? 'L' : 'M';
+      actualPath += `${cmd} ${x(d)} ${y(cumByDay[d])} `;
+      started = true;
+    }
+
+    const areaPath = started ? `${actualPath} L ${x(lastDay)} ${y(0)} L ${x(0)} ${y(0)} Z` : '';
+
+    const overBudget = running > budget;
+
+    return `
+    <svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" role="img" aria-label="Cumulative spend versus budget pace chart">
+      <line x1="${padL}" y1="${y(0)}" x2="${w-padR}" y2="${y(0)}" stroke="var(--paper-line)" stroke-width="1"/>
+      <path d="${paceLine}" fill="none" stroke="var(--stamp-gold)" stroke-width="1.4" stroke-dasharray="3,3" opacity="0.8"/>
+      ${areaPath ? `<path d="${areaPath}" fill="${overBudget ? 'var(--stamp-red)' : 'var(--stamp-green)'}" opacity="0.14"/>` : ''}
+      ${started ? `<path d="${actualPath}" fill="none" stroke="${overBudget ? 'var(--stamp-red)' : 'var(--stamp-green)'}" stroke-width="2"/>` : ''}
+      ${started ? `<circle cx="${x(lastDay)}" cy="${y(cumByDay[lastDay] ?? 0)}" r="3" fill="${overBudget ? 'var(--stamp-red)' : 'var(--stamp-green)'}"/>` : ''}
+      <text x="${padL}" y="${h-4}" font-size="8" fill="var(--ink-soft)" font-family="IBM Plex Sans">Day 1</text>
+      <text x="${w-padR}" y="${h-4}" font-size="8" fill="var(--ink-soft)" font-family="IBM Plex Sans" text-anchor="end">Day ${total}</text>
+    </svg>`;
+  }
+
+  // ---------- Render ----------
+  function render(){
+    const mk = monthKeyOf(todayKey());
+    const [y,m] = mk.split('-').map(Number);
+    document.getElementById('monthLabel').textContent = `${MONTH_NAMES[m-1]} ${y}`;
+
+    const budget = budgetFor(mk);
+    const keys = monthEntries(mk);
+    const spent = keys.reduce((sum,k) => sum + entryTotal(state.entries[k]), 0);
+    const remaining = budget - spent;
+    const total = daysInMonth(mk);
+    const todayNum = Number(todayKey().slice(8,10));
+    const pacePct = Math.min(100, (todayNum/total)*100);
+    const spendPct = Math.min(100, budget > 0 ? (spent/budget)*100 : 0);
+    const over = remaining < 0;
+
+    const stampColor = over ? 'var(--stamp-red)' : (spendPct > pacePct + 8 ? 'var(--stamp-gold)' : 'var(--stamp-green)');
+    const meterColor = over ? 'var(--stamp-red)' : 'var(--stamp-green)';
+
+    document.getElementById('budgetInput').value = budget;
+
+    const page = document.getElementById('pageContent');
+    page.innerHTML = `
+      <section class="summary">
+        <div class="stamp" style="color:${stampColor}">
+          <div class="amt">${fmt(Math.abs(remaining))}</div>
+          <div class="lbl">${over ? 'over budget' : 'left this month'}</div>
+        </div>
+        <div class="summary-detail">
+          <div class="summary-row"><span>Spent so far</span><strong>${fmt(spent)}</strong></div>
+          <div class="summary-row"><span>Monthly budget</span><strong>${fmt(budget)}</strong></div>
+          <div class="summary-row"><span>Day</span><strong>${todayNum} of ${total}</strong></div>
+          <div class="meter">
+            <div class="meter-fill" style="width:${spendPct}%; background:${meterColor}"></div>
+            <div class="meter-pace" style="left:${pacePct}%"></div>
+          </div>
+          <div class="meter-caption"><span>Spend so far</span><span>Marker: today's pace</span></div>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="section-title">This month at a glance</h2>
+        <div class="chart-wrap">
+          ${buildChartSVG(mk, budget)}
+          <div class="chart-legend">
+            <span><i class="dot" style="background:${over ? '#A23B32' : '#2F6B4F'}"></i>Actual spend</span>
+            <span><i class="dot" style="background:#93701F"></i>Even pace</span>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="section-title">Log a day</h2>
+        <div class="entry-card">
+          <div class="date-row">
+            <label for="entryDate">Date</label>
+            <input type="date" id="entryDate" value="${todayKey()}" max="${todayKey()}">
+          </div>
+
+          <div class="meal-row">
+            <div class="meal-name">
+              <span class="title">Breakfast</span>
+              <span class="hint">Eggs, banana — enter what you spent</span>
+            </div>
+            <div class="amount-field">
+              <span class="rupee">₹</span>
+              <input type="number" id="fBreakfast" inputmode="numeric" min="0" placeholder="0">
+            </div>
+          </div>
+
+          <div class="meal-row">
+            <div class="meal-name">
+              <span class="title">Lunch</span>
+              <span class="hint">Mess default — edit if you ate out</span>
+            </div>
+            <div class="amount-field">
+              <span class="rupee">₹</span>
+              <input type="number" id="fLunch" inputmode="numeric" min="0">
+            </div>
+          </div>
+
+          <div class="meal-row">
+            <div class="meal-name">
+              <span class="title">Dinner</span>
+              <span class="hint">Mess default — edit if you ate out</span>
+            </div>
+            <div class="amount-field">
+              <span class="rupee">₹</span>
+              <input type="number" id="fDinner" inputmode="numeric" min="0">
+            </div>
+          </div>
+
+          <div class="entry-total">
+            <span>Day's total</span>
+            <strong id="dayTotalPreview">₹0</strong>
+          </div>
+
+          <button class="save-btn" id="saveEntryBtn" type="button">Save entry</button>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="section-title">Daily log</h2>
+        <div class="log-list" id="logList"></div>
+      </section>
+    `;
+
+    wireEntryForm(mk);
+    renderLog(mk);
+  }
+
+  function wireEntryForm(mk){
+    const dateInput = document.getElementById('entryDate');
+    const bf = document.getElementById('fBreakfast');
+    const lu = document.getElementById('fLunch');
+    const di = document.getElementById('fDinner');
+    const preview = document.getElementById('dayTotalPreview');
+    const btn = document.getElementById('saveEntryBtn');
+
+    function fillFromDate(dateKey){
+      const existing = state.entries[dateKey];
+      bf.value = existing ? (existing.breakfast || '') : '';
+      lu.value = existing ? existing.lunch : DEFAULT_LUNCH;
+      di.value = existing ? existing.dinner : DEFAULT_DINNER;
+      btn.textContent = existing ? 'Update entry' : 'Save entry';
+      btn.classList.toggle('is-update', !!existing);
+      updatePreview();
+    }
+
+    function updatePreview(){
+      const t = (Number(bf.value)||0) + (Number(lu.value)||0) + (Number(di.value)||0);
+      preview.textContent = fmt(t);
+    }
+
+    dateInput.addEventListener('change', () => fillFromDate(dateInput.value));
+    [bf,lu,di].forEach(el => el.addEventListener('input', updatePreview));
+
+    btn.addEventListener('click', async () => {
+      const dateKey = dateInput.value;
+      if(!dateKey){ showToast('Pick a date first'); return; }
+      state.entries[dateKey] = {
+        breakfast: Number(bf.value) || 0,
+        lunch: lu.value === '' ? 0 : Number(lu.value),
+        dinner: di.value === '' ? 0 : Number(di.value)
+      };
+      await persist();
+      showToast('Entry saved');
+      render();
+    });
+
+    fillFromDate(dateInput.value);
+  }
+
+  function renderLog(mk){
+    const list = document.getElementById('logList');
+    const keys = monthEntries(mk).slice().reverse();
+    if(keys.length === 0){
+      list.innerHTML = `<div class="empty-state">No entries yet. Log today's meals above to start this month's ledger.</div>`;
+      return;
+    }
+    list.innerHTML = keys.map(k => {
+      const e = state.entries[k];
+      const d = new Date(k + 'T00:00:00');
+      const dayLabel = d.getDate();
+      const weekday = d.toLocaleDateString('en-IN', { weekday: 'short' });
+      const parts = [];
+      if(e.breakfast) parts.push(`Breakfast ${fmt(e.breakfast)}`);
+      parts.push(`Lunch ${fmt(e.lunch)}`);
+      parts.push(`Dinner ${fmt(e.dinner)}`);
+      return `
+        <div class="log-row" data-date="${k}">
+          <div class="log-date">
+            <span class="d">${weekday}, ${dayLabel}</span>
+            <span class="b">${parts.join(' · ')}</span>
+          </div>
+          <div class="log-amt">
+            <span class="total">${fmt(entryTotal(e))}</span>
+            <button class="del" data-date="${k}" aria-label="Delete entry for ${k}">×</button>
+          </div>
+        </div>`;
+    }).join('');
+
+    list.querySelectorAll('.log-row').forEach(row => {
+      row.addEventListener('click', (ev) => {
+        if(ev.target.closest('.del')) return;
+        const dateKey = row.getAttribute('data-date');
+        document.getElementById('entryDate').value = dateKey;
+        document.getElementById('entryDate').dispatchEvent(new Event('change'));
+        document.getElementById('entryDate').scrollIntoView({ behavior:'smooth', block:'center' });
+      });
+    });
+
+    list.querySelectorAll('.del').forEach(btn => {
+      btn.addEventListener('click', async (ev) => {
+        ev.stopPropagation();
+        const dateKey = btn.getAttribute('data-date');
+        delete state.entries[dateKey];
+        await persist();
+        showToast('Entry removed');
+        render();
+      });
+    });
+  }
+
+  // ---------- Settings drawer ----------
+  const backdrop = document.getElementById('drawerBackdrop');
+  document.getElementById('openSettings').addEventListener('click', () => {
+    backdrop.classList.add('open');
+  });
+  backdrop.addEventListener('click', (e) => {
+    if(e.target === backdrop) backdrop.classList.remove('open');
+  });
+  document.getElementById('saveBudgetBtn').addEventListener('click', async () => {
+    const mk = monthKeyOf(todayKey());
+    const val = Number(document.getElementById('budgetInput').value) || 0;
+    state.budgetsByMonth[mk] = val;
+    await persist();
+    backdrop.classList.remove('open');
+    showToast('Budget updated');
+    render();
+  });
+  document.getElementById('resetBtn').addEventListener('click', async () => {
+    const mk = monthKeyOf(todayKey());
+    const confirmed = confirm('Clear all entries for this month? This cannot be undone.');
+    if(!confirmed) return;
+    Object.keys(state.entries).filter(k => monthKeyOf(k) === mk).forEach(k => delete state.entries[k]);
+    await persist();
+    backdrop.classList.remove('open');
+    showToast('This month cleared');
+    render();
+  });
+
+  // ---------- Init ----------
+  (async function init(){
+    await loadState();
+    render();
+  })();
+  // Register the service worker when served from HTTPS/localhost.
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./service-worker.js').catch(err => {
+        console.warn('Service worker registration failed:', err);
+      });
+    });
+  }
+
+})();
+</script>
+</body>
+</html>
