@@ -3,10 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#16301F">
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="icon-192.png" type="image/png">
-<link rel="apple-touch-icon" href="icon-192.png">
 <title>Mess Ledger</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -226,6 +222,9 @@
   .dot{ width:8px;height:8px;border-radius:50%; display:inline-block; }
 
   /* ---- Entry form ---- */
+  .holiday-toggle{display:flex;align-items:center;gap:8px;margin:10px 0 4px;font-size:12.5px;color:var(--ink-soft);cursor:pointer;}
+  .holiday-toggle input{width:16px;height:16px;accent-color:var(--stamp-green);cursor:pointer;}
+
   .entry-card{
     background:rgba(255,255,255,0.4);
     border:1px solid var(--paper-line);
@@ -527,7 +526,7 @@
       <button class="close-btn" id="saveBudgetBtn" type="button">Save</button>
     </div>
     <div class="drawer-note">
-      Your entries are saved on this device. On Android, open the hosted app in Chrome and use <strong>Install app</strong> or <strong>Add to Home screen</strong>.
+      Your entries are saved on this device. To keep Mess Ledger on your phone, open this file in your mobile browser, then use <strong>Share → Add to Home Screen</strong> (iPhone) or the browser menu's <strong>Add to Home screen</strong> (Android).
     </div>
   </div>
 </div>
@@ -543,7 +542,7 @@
 
   const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-  let state = { budgetsByMonth: {}, entries: {} };
+  let state = { budgetsByMonth: {}, entries: {}, holidays: {} };
   let loaded = false;
 
   const pad = n => String(n).padStart(2,'0');
@@ -574,10 +573,10 @@
 
   async function loadState(){
     try{
-      const value = localStorage.getItem(STORAGE_KEY);
-      if(value){
-        const parsed = JSON.parse(value);
-        state = { budgetsByMonth: parsed.budgetsByMonth || {}, entries: parsed.entries || {} };
+      const res = await window.storage.get(STORAGE_KEY, false);
+      if(res && res.value){
+        const parsed = JSON.parse(res.value);
+        state = { budgetsByMonth: parsed.budgetsByMonth || {}, entries: parsed.entries || {}, holidays: parsed.holidays || {} };
       }
     }catch(err){
       // no saved state yet, or fetch failed — start fresh
@@ -588,7 +587,10 @@
 
   async function persist(){
     try{
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      const result = await window.storage.set(STORAGE_KEY, JSON.stringify(state), false);
+      if(!result){
+        showToast('Could not save — try again');
+      }
     }catch(err){
       console.error('Storage error:', err);
       showToast('Could not save — try again');
@@ -713,8 +715,12 @@
         <div class="entry-card">
           <div class="date-row">
             <label for="entryDate">Date</label>
-            <input type="date" id="entryDate" value="${todayKey()}" max="${todayKey()}">
+            <input type="date" id="entryDate" value="${todayKey()}" >
           </div>
+          <label class="holiday-toggle">
+            <input type="checkbox" id="holidayCheck">
+            <span>Holiday / not staying at mess</span>
+          </label>
 
           <div class="meal-row">
             <div class="meal-name">
@@ -778,14 +784,15 @@
 
     function fillFromDate(dateKey){
       const existing = state.entries[dateKey];
-      bf.value = existing ? (existing.breakfast || '') : '';
-      lu.value = existing ? existing.lunch : DEFAULT_LUNCH;
-      di.value = existing ? existing.dinner : DEFAULT_DINNER;
+      const holiday = !!state.holidays[dateKey];
+      document.getElementById('holidayCheck').checked = holiday;
+      bf.value = existing ? (existing.breakfast || '') : (holiday ? 0 : '');
+      lu.value = existing ? existing.lunch : (holiday ? 0 : DEFAULT_LUNCH);
+      di.value = existing ? existing.dinner : (holiday ? 0 : DEFAULT_DINNER);
       btn.textContent = existing ? 'Update entry' : 'Save entry';
       btn.classList.toggle('is-update', !!existing);
       updatePreview();
     }
-
     function updatePreview(){
       const t = (Number(bf.value)||0) + (Number(lu.value)||0) + (Number(di.value)||0);
       preview.textContent = fmt(t);
@@ -797,14 +804,28 @@
     btn.addEventListener('click', async () => {
       const dateKey = dateInput.value;
       if(!dateKey){ showToast('Pick a date first'); return; }
-      state.entries[dateKey] = {
-        breakfast: Number(bf.value) || 0,
-        lunch: lu.value === '' ? 0 : Number(lu.value),
-        dinner: di.value === '' ? 0 : Number(di.value)
-      };
-      await persist();
-      showToast('Entry saved');
+      if(document.getElementById('holidayCheck').checked){
+        state.holidays[dateKey] = true;
+        state.entries[dateKey] = { breakfast: 0, lunch: 0, dinner: 0 };
+        await persist();
+        showToast('Holiday saved — ₹0');
+      }else{
+        delete state.holidays[dateKey];
+        state.entries[dateKey] = {
+          breakfast: Number(bf.value) || 0,
+          lunch: lu.value === '' ? 0 : Number(lu.value),
+          dinner: di.value === '' ? 0 : Number(di.value)
+        };
+        await persist();
+        showToast('Entry saved');
+      }
       render();
+    });
+
+    document.getElementById('holidayCheck').addEventListener('change', () => {
+      const holiday = document.getElementById('holidayCheck').checked;
+      if(holiday){ bf.value=0; lu.value=0; di.value=0; }
+      updatePreview();
     });
 
     fillFromDate(dateInput.value);
@@ -823,7 +844,8 @@
       const dayLabel = d.getDate();
       const weekday = d.toLocaleDateString('en-IN', { weekday: 'short' });
       const parts = [];
-      if(e.breakfast) parts.push(`Breakfast ${fmt(e.breakfast)}`);
+      if(state.holidays[k]) parts.push('Holiday · ₹0');
+      if(e.breakfast && !state.holidays[k]) parts.push(`Breakfast ${fmt(e.breakfast)}`);
       parts.push(`Lunch ${fmt(e.lunch)}`);
       parts.push(`Dinner ${fmt(e.dinner)}`);
       return `
@@ -854,6 +876,7 @@
         ev.stopPropagation();
         const dateKey = btn.getAttribute('data-date');
         delete state.entries[dateKey];
+        delete state.holidays[dateKey];
         await persist();
         showToast('Entry removed');
         render();
@@ -894,15 +917,6 @@
     await loadState();
     render();
   })();
-  // Register the service worker when served from HTTPS/localhost.
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./service-worker.js').catch(err => {
-        console.warn('Service worker registration failed:', err);
-      });
-    });
-  }
-
 })();
 </script>
 </body>
