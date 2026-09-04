@@ -860,50 +860,24 @@
      ========================================= */
 
   async function loadState(){
+  try{
+    const saved = localStorage.getItem(STORAGE_KEY);
 
-    try{
-
-      const saved =
-        localStorage.getItem(STORAGE_KEY);
-
-      if(saved){
-
-        const parsed =
-          JSON.parse(saved);
-
-        state = {
-
-          budgetsByMonth:
-            parsed.budgetsByMonth || {},
-
-          entries:
-            parsed.entries || {},
-
-          holidays:
-            parsed.holidays || {}
-
-        };
-
-      }
-
-    }catch(err){
-
-      console.error(
-        'Could not load ledger:',
-        err
-      );
+    if(saved){
+      const parsed = JSON.parse(saved);
 
       state = {
-        budgetsByMonth: {},
-        entries: {},
-        holidays: {}
+        budgetsByMonth: parsed.budgetsByMonth || {},
+        entries: parsed.entries || {},
+        holidays: parsed.holidays || {}
       };
-
     }
-
-    loaded = true;
-
+  }catch(err){
+    console.error('Could not load ledger:', err);
   }
+
+  loaded = true;
+}
 
 
   /* =========================================
@@ -911,28 +885,16 @@
      ========================================= */
 
   async function persist(){
-
-    try{
-
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(state)
-      );
-
-    }catch(err){
-
-      console.error(
-        'Storage error:',
-        err
-      );
-
-      showToast(
-        'Could not save — try again'
-      );
-
-    }
-
+  try{
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(state)
+    );
+  }catch(err){
+    console.error('Storage error:', err);
+    showToast('Could not save — try again');
   }
+}
 
 
   /* =========================================
